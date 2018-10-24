@@ -1,6 +1,7 @@
 package br.com.dgss.main;
 
 import java.awt.BorderLayout;
+import java.awt.Component;
 import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -17,13 +18,14 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
 import javax.swing.ButtonGroup;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -35,16 +37,16 @@ import javax.swing.JTextField;
 import javax.swing.SpinnerDateModel;
 import javax.swing.border.EmptyBorder;
 
+import org.eclipse.wb.swing.FocusTraversalOnArray;
 import org.openqa.selenium.By;
 import org.openqa.selenium.Keys;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.interactions.Actions;
-import javax.swing.JComboBox;
-import javax.swing.JCheckBox;
-import org.eclipse.wb.swing.FocusTraversalOnArray;
-import java.awt.Component;
+
+import br.com.dgss.util.ConfigMailUtil;
+import br.com.dgss.util.EmailUtil;
 
 public class Login extends JFrame {
 
@@ -262,7 +264,7 @@ public class Login extends JFrame {
 	}
 
 	private void manipularPutCallBinary() {
-		File caminho = new File(txtCaminhoArquivos.getText());
+		final File caminho = new File(txtCaminhoArquivos.getText());
 
 		TimerTask comprarVender = new TimerTask() {
 			@Override
@@ -274,6 +276,11 @@ public class Login extends JFrame {
 				try {
 					hoje = sdf.parse(sdf.format(new Date()));
 				} catch (ParseException e1) {
+					try {
+						EmailUtil.sendEmail(new ConfigMailUtil().loadProperties(), txtLogin.getText(), "", e1.getMessage());
+					} catch (Exception e){
+						e.printStackTrace();
+					}
 				}
 
 				if (hoje != null && (hoje.compareTo(spinnerInicio) >= 0 && hoje.compareTo(spinnerFim) <= 0)) {
@@ -349,6 +356,11 @@ public class Login extends JFrame {
 												subTooltipIgualdade.findElement(By.tagName("span")).click();
 											}
 										} catch (Exception e) {
+											try {
+												EmailUtil.sendEmail(new ConfigMailUtil().loadProperties(), txtLogin.getText(), "", e.getMessage());
+											} catch (Exception e1){
+												e1.printStackTrace();
+											}
 										}
 									}
 
@@ -395,13 +407,24 @@ public class Login extends JFrame {
 									transferirArquivoPosExecucao(arquivosNaPasta.get(0).getAbsolutePath(), destino);
 									origem.delete();
 									e.printStackTrace();
+									
+									try {
+										EmailUtil.sendEmail(new ConfigMailUtil().loadProperties(), txtLogin.getText(), "", e.getMessage());
+									} catch (Exception e1){
+										e1.printStackTrace();
+									}
 								}
 							}
 						}
 
 					} catch (Exception e) {
-						e.printStackTrace();
-						System.out.println(e.getMessage());
+						
+						try {
+							EmailUtil.sendEmail(new ConfigMailUtil().loadProperties(), txtLogin.getText(), "", e.getMessage());
+						} catch (Exception e1){
+							e1.printStackTrace();
+						}
+
 					}
 				}
 			}
@@ -409,23 +432,6 @@ public class Login extends JFrame {
 		timerComprarVender = new Timer();
 		timerComprarVender.schedule(comprarVender, 0l, 1000l);
 
-	}
-
-	private void manterLogado(String id) {
-		TimerTask manterOnline = new TimerTask() {
-			public void run() {
-				try {
-					WebElement refreshBalance = driver.findElement(By.id(id));
-					refreshBalance.click();
-				} catch (Exception e) {
-					e.printStackTrace();
-					System.out.println(e.getMessage());
-				}
-			};
-		};
-
-		Timer timerManterOnline = new Timer();
-		timerManterOnline.schedule(manterOnline, 0l, 300000l);
 	}
 
 	private void transferirArquivoPosExecucao(String pathArquivo, File destino) throws IOException {
@@ -444,23 +450,6 @@ public class Login extends JFrame {
 		fisDestino.close();
 	}
 
-	private void clickLinkByHref(String href, WebDriver driver) {
-		try {
-			List<WebElement> anchors = driver.findElements(By.tagName("a"));
-			Iterator<WebElement> i = anchors.iterator();
-
-			while (i.hasNext()) {
-				WebElement anchor = i.next();
-				if (anchor != null && anchor.getAttribute("href") != null
-						&& anchor.getAttribute("href").contains(href)) {
-					anchor.click();
-					break;
-				}
-			}
-		} catch (Exception e) {
-
-		}
-	}
 
 	public void ClearAndSetText(By by, String text) {
 		WebElement element = driver.findElement(by);
@@ -509,6 +498,11 @@ public class Login extends JFrame {
 		} catch (Exception e) {
 			erroNoLogin = true;
 			JOptionPane.showMessageDialog(null, e.getMessage());
+			try {
+				EmailUtil.sendEmail(new ConfigMailUtil().loadProperties(), txtLogin.getText(), "", e.getMessage());
+			} catch (Exception e1){
+				e1.printStackTrace();
+			}
 		}
 
 		if (!erroNoLogin) {
